@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<?fileVersion 4.0.0?>
+
+<cproject storage_type_id="org.eclipse.cdt.core.XmlProjectDescriptionStorage">
+	<storageModule moduleId="org.eclipse.cdt.core.settings">
+		<cconfiguration id="com.signaklara.np5.managedbuilder.config.1289058375">
+			<storageModule buildSystemId="org.eclipse.cdt.managedbuilder.core.configurationDataProvider" id="com.signaklara.np5.managedbuilder.config.1289058375" moduleId="org.eclipse.cdt.core.settings" name="Debug">
+				<externalSettings/>
+				<extensions>
+					<extension id="org.eclipse.cdt.core.ELF" point="org.eclipse.cdt.core.BinaryParser"/>
+					<extension id="com.signaklara.np5.managedbuilder.error.parser.cfx" point="org.eclipse.cdt.core.ErrorParser"/>
+					<extension id="org.eclipse.cdt.core.GmakeErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+					<extension id="org.eclipse.cdt.core.CWDLocator" point="org.eclipse.cdt.core.ErrorParser"/>
+					<extension id="org.eclipse.cdt.core.GCCErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+					<extension id="org.eclipse.cdt.core.GLDErrorParser" point="org.eclipse.cdt.core.ErrorParser"/>
+				</extensions>
+			</storageModule>
+			<storageModule moduleId="cdtBuildSystem" version="4.0.0">
+				<configuration artifactExtension="nvi" artifactName="${ProjName}" buildArtefactType="org.eclipse.cdt.build.core.buildArtefactType.sk4exe" buildProperties="org.eclipse.cdt.build.core.buildType=com.signaklara.np5.managedbuilder.buildType.exe,org.eclipse.cdt.build.core.buildArtefactType=org.eclipse.cdt.build.core.buildArtefactType.sk4exe" cleanCommand="cs-rm -f" description="This configuration builds a .cfe executable file" errorParsers="com.signaklara.np5.managedbuilder.error.parser.cfx;org.eclipse.cdt.core.GLDErrorParser" id="com.signaklara.np5.managedbuilder.config.1289058375" name="Debug" parent="com.signaklara.np5.managedbuilder.config">
+					<folderInfo id="com.signaklara.np5.managedbuilder.config.1289058375." name="/" resourcePath="">
+						<toolChain id="com.signaklara.np5.managedbuilder.cfx.toolchain.cfe.config.215610681" name="SK4 ELF Toolchain" superClass="com.signaklara.np5.managedbuilder.cfx.toolchain.cfe.config">
+							<targetPlatform binaryParser="org.eclipse.cdt.core.ELF" id="com.signaklara.np5.managedbuilder.binary.parser.1104787678" name="" superClass="com.signaklara.np5.managedbuilder.binary.parser"/>
+							<builder buildPath="${workspace_loc:/ARM_PCM/Debug}" id="com.signaklara.np5.managedbuilder.builder.2093611231" keepEnvironmentInBuildfile="false" managedBuildOn="true" name="GNU Make" superClass="com.signaklara.np5.managedbuilder.builder"/>
+							<tool id="com.signaklara.np5.managedbuilder.cfx.toolchain.nvi.hct.2144049480" name="HCT Compiler" superClass="com.signaklara.np5.managedbuilder.cfx.toolchain.nvi.hct"/>
+							<tool id="com.signaklara.np5.managedbuilder.cfx.toolchain.nvi.cfcc.link.1469816233" name="CFCC Linker" superClass="com.signaklara.np5.managedbuilder.cfx.toolchain.nvi.cfcc.link">
+								<option id="cfcc.link.mem0.1521882121" name="PRAM allocation (--mem0=&lt;start&gt;/&lt;end&gt;)" superClass="cfcc.link.mem0" valueType="stringList">
+									<listOptionValue builtIn="false" value="0x8000/0xDBFF"/>
+									<listOptionValue builtIn="false" value="0xDFE0/0xDFFF"/>
+									<listOptionValue builtIn="false" value="0xE000/0xEFFF"/>
+									<listOptionValue builtIn="false" value="0xF300/0xF312"/>
+									<listOptionValue builtIn="false" value="0xF800/0xF8BF"/>
+									<listOptionValue builtIn="false" value="0xF900/0xF9FF"/>
+									<listOptionValue builtIn="false" value="0x4000/0x4FFF"/>
+									<listOptionValue builtIn="false" value="0x5000/0x7FFF"/>
+								</option>
+							</tool>
+							<tool id="com.signaklara.np5.managedbuilder.cfx.toolchain.nvi.cfcc.assemble.1524488213" name="CFCC Assembler" superClass="com.signaklara.np5.managedbuilder.cfx.toolchain.nvi.cfcc.assemble">
+								<inputType id="cfcc.assemble.io.cfs.796336941" name="CFX Assembly Source File (.cfs)" superClass="cfcc.assemble.io.cfs">
+									<additionalInput kind="additionaldependency" paths="$(HCT_DEPS:.dep=.cfi)"/>
+								</inputType>
+							</tool>
+							<tool id="com.signaklara.np5.managedbuilder.cfx.toolchain.nvi.feng.assembler.909673104" name="FENG Assembler" superClass="com.signaklara.np5.managedbuilder.cfx.toolchain.nvi.feng.assembler"/>
+							<tool id="com.signaklara.np5.managedbuilder.cfx.toolchain.nvi.gcc.compiler.1285973866" name="GCC Compiler" superClass="com.signaklara.np5.managedbuilder.cfx.toolchain.nvi.gcc.compiler">
+								<inputType id="gcc.compiler.io.c.1398816249" superClass="gcc.compiler.io.c"/>
+							</tool>
+							<tool id="com.signaklara.np5.managedbuilder.cfx.toolchain.nvi.gcc.linker.1672920872" name="GCC Linker" superClass="com.signaklara.np5.managedbuilder.cfx.toolchain.nvi.gcc.linker">
+								<inputType id="gcc.linker.io.o.19639857" superClass="gcc.linker.io.o"/>
+							</tool>
+							<tool id="com.signaklara.np5.managedbuilder.cfx.toolchain.nvi.nvmm.1918398064" name="NVMM" superClass="com.signaklara.np5.managedbuilder.cfx.toolchain.nvi.nvmm">
+								<option id="nvmm.imageSize.540058256" name="Target image size (-l)" superClass="nvmm.imageSize" value="cfcc.link.option.target.image.size.2048kb" valueType="enumerated"/>
+							</tool>
+						</toolChain>
+					</folderInfo>
+				</configuration>
+			</storageModule>
+			<storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>
+		</cconfiguration>
+	</storageModule>
+	<storageModule moduleId="cdtBuildSystem" version="4.0.0">
+		<project id="ARM_PCM.com.signaklara.np5.managedbuilder.cfx.project.1507340609" name="SK4 Executable / EEPROM" projectType="com.signaklara.np5.managedbuilder.cfx.project"/>
+	</storageModule>
+	<storageModule moduleId="refreshScope"/>
+	<storageModule moduleId="scannerConfiguration">
+		<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
+		<scannerConfigBuildInfo instanceId="com.signaklara.np5.managedbuilder.config.1289058375;com.signaklara.np5.managedbuilder.config.1289058375.;com.signaklara.np5.managedbuilder.cfx.toolchain.nvi.gcc.compiler.1285973866;gcc.compiler.io.c.1398816249">
+			<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId="org.eclipse.cdt.managedbuilder.core.GCCManagedMakePerProjectProfileC"/>
+		</scannerConfigBuildInfo>
+	</storageModule>
+</cproject>

@@ -1,0 +1,296 @@
+/*
+ * app_pcm.cfi
+ *  This file defines the PCM level constants in the DSP core
+ *  Created on: Jan 20, 2015
+ *      Author: L_Rui
+ *  --------------------------------------------------------------------------
+ *  app.cfi
+ *  - Main application-level include file
+ *  --------------------------------------------------------------------------
+ *  Revision: 0.1
+ *  Modified date: Jan 20, 2016
+ */
+
+
+#ifndef APP_PCM_CFI_INCLUDED
+#define APP_PCM_CFI_INCLUDED
+
+#include <sk4_sys.cfi>
+#include <sk4_syslib.cfi>
+#include "../app.cfi"
+
+//-----------------------------------------------------------------------------
+// Macro         : SET_FRAME_Property(TYPE, LENGTH, UNIT)
+//-----------------------------------------------------------------------------
+// Description   : Set the property frame which have 1 word
+// Inputs        : - TYPE           - Data type (8 bits)
+//                 - LENGTH         - Number of the Power waves per unit (16 bits)
+//                 - UNIT           - Unit of minimum Power wave (8 bits)
+// Outputs       : 
+// Register mods : xp3, XSTEP3, XCIRC3
+// Assumptions   : 
+// Clock Cycles  : 
+//-----------------------------------------------------------------------------
+#macro SET_FRAME_Property(TYPE, LENGTH, UNIT)
+    load A1.H, TYPE                             // Load the Type bits
+    shll A1, 24 ||| nop                         // Shift the type bits and load
+    load x0, LENGTH                             // the length bits
+                                                
+                                                
+    shll x0, 8  ||| nop
+    load x1, UNIT                               // Load the unit bits
+    add x0, x0, x1 ||| nop
+    nop ||| move A1.H, x0                       // Move length and units to A1.H
+    
+    store.ex P[xp3++], A1                       // Store the parameter word
+#endm
+
+//-----------------------------------------------------------------------------
+// Support macro
+//-----------------------------------------------------------------------------
+#macro _PCM_MEM_ADDR_Label
+
+    // Generate unique labels
+    #ifndef _PCM_MEM_ADDR_END
+        #set _PCM_MEM_ADDR_COUNT 0
+    #endif
+    #set _PCM_MEM_ADDR_COUNT _PCM_MEM_ADDR_COUNT+1
+    #undef _PCM_MEM_ADDR_END
+    #define _PCM_MEM_ADDR_END paste( _PCM_MEM_ADDR_END, _PCM_MEM_ADDR_COUNT )
+
+#endm
+
+//-----------------------------------------------------------------------------
+// Macro         : COPY_PCM_INPUT_DATA(BASE_ADDR, LENGTH)
+//-----------------------------------------------------------------------------
+// Description   : copy data into the P_PCM_INPUT memory
+// Inputs        : - BASE_ADDR      - The base address of the sending data
+//                 - LENGTH         - Number of the Power waves per unit 
+// Outputs       : 
+// Register mods : xp3, XSTEP3, XCIRC3, xp4, XSTEP4, XCIRC4
+// Assumptions   : xp3 pointing to the current address of P_PCM_INPUT
+// Clock Cycles  : 
+//-----------------------------------------------------------------------------
+#macro COPY_PCM_INPUT_DATA(BASE_ADDR, LENGTH)
+
+    _PCM_MEM_ADDR_Label
+    // Repeat LENGTH times to copy each word from the original data memory to 
+    // P_PCM_INPUT, after the following 2 delays
+    loop.2d LENGTH, _PCM_MEM_ADDR_END
+    // Load the BASE_ADDR into yp3
+    load xp4, BASE_ADDR
+    nop
+    
+    nop ||| load x0, x[xp4++]
+    _PCM_MEM_ADDR_END:
+        store P[xp3++], x0
+#endm
+
+
+
+//-----------------------------------------------------------------------------
+// Macro         : ADD_CODED_Mem(BASE_ADDR, LENGTH)
+//-----------------------------------------------------------------------------
+// Description   : Add CODED memory into the P_PCM_INPUT table
+// Inputs        : - BASE_ADDR      - The base address of the sending data
+//                 - LENGTH         - Number of the Power waves per unit 
+// Outputs       : 
+// Register mods : xp3, XSTEP3, XCIRC3
+// Assumptions   : 
+// Clock Cycles  : 
+//-----------------------------------------------------------------------------
+#macro ADD_CODED_Mem(BASE_ADDR,LENGTH)
+    // Add the first frame
+    SET_FRAME_Property(CODED_DATA_TYPE, LENGTH, 0)
+    // Copy data
+    COPY_PCM_INPUT_DATA(BASE_ADDR, LENGTH)
+    //Sys_Mem_CopyXP(BASE_ADDR, xp3, LENGTH)
+    //load xstep3, LENGTH
+    //nop ||| add xp3, xp3, xstep3
+#endm
+
+
+//-----------------------------------------------------------------------------
+// Macro         : ADD_CODED_Data(DATA)
+//-----------------------------------------------------------------------------
+// Description   : Add CODED data into the P_PCM_INPUT table
+// Inputs        : - DATA           - The data to be added
+// Outputs       : 
+// Register mods : xp3, XSTEP3, XCIRC3
+// Assumptions   : 
+// Clock Cycles  : 
+//-----------------------------------------------------------------------------
+#macro ADD_CODED_Data(DATA)
+    // Add the first frame
+    SET_FRAME_Property(CODED_DATA_TYPE, 1, 1)
+    // Copy data
+    load x0, DATA
+    store P[xp3++], x0
+#endm
+
+//-----------------------------------------------------------------------------
+// Macro         : ADD_UNCODED_Mem(BASE_ADDR, LENGTH)
+//-----------------------------------------------------------------------------
+// Description   : Add UNCODED data into the P_PCM_INPUT table
+// Inputs        : - BASE_ADDR      - The base address of the sending data
+//                 - LENGTH         - Number of the Power waves per unit 
+// Outputs       : 
+// Register mods : xp3, XSTEP3, XCIRC3, xp4, XSTEP4, XCIRC4
+// Assumptions   : 
+// Clock Cycles  : 
+//-----------------------------------------------------------------------------
+#macro ADD_UNCODED_Mem(BASE_ADDR,LENGTH)
+    // Add the first frame
+    SET_FRAME_Property(UNCODED_DATA_TYPE, LENGTH, 0)
+    // Copy data
+    COPY_PCM_INPUT_DATA(BASE_ADDR, LENGTH)
+    //Sys_Mem_CopyXP(BASE_ADDR, xp3, LENGTH)
+    //xp3 += LENGTH
+#endm
+
+
+//-----------------------------------------------------------------------------
+// Macro         : ADD_UNCODED_Data(DATA)
+//-----------------------------------------------------------------------------
+// Description   : Add Uncoded data into the P_PCM_INPUT table
+// Inputs        : - DATA           - The data to be added
+// Outputs       : 
+// Register mods : xp3, XSTEP3, XCIRC3
+// Assumptions   : 
+// Clock Cycles  : 
+//-----------------------------------------------------------------------------
+#macro ADD_UNCODED_Data(DATA)
+    // Add the first frame
+    SET_FRAME_Property(UNCODED_DATA_TYPE, 1, 1)
+    // Copy data
+    load x0, DATA
+    store P[xp3++], x0
+#endm
+
+//-----------------------------------------------------------------------------
+// Macro         : ADD_NULL_Waves(LENGTH, UNIT)
+//-----------------------------------------------------------------------------
+// Description   : Add NULL waves into the P_PCM_INPUT table
+// Inputs        : - LENGTH         - Number of the Null waves per unit (1 word)
+//                 - UNIT           - Unit of minimum Null wave (1 word)
+// Outputs       : 
+// Register mods : xp3, XSTEP3, XCIRC3
+// Assumptions   : 
+// Clock Cycles  : 
+//-----------------------------------------------------------------------------
+#macro ADD_NULL_Waves(LENGTH, UNIT)
+    SET_FRAME_Property(NULL_WAVE_TYPE, LENGTH, UNIT)
+#endm
+
+//-----------------------------------------------------------------------------
+// Macro         : ADD_ZERO_Waves(LENGTH, UNIT)
+//-----------------------------------------------------------------------------
+// Description   : Add ZERO waves into the P_PCM_INPUT table
+// Inputs        : - LENGTH         - Number of the Zero waves per unit (1 word)
+//                 - UNIT           - Unit of minimum Zero wave (1 word)
+// Outputs       : 
+// Register mods : xp3, XSTEP3, XCIRC3
+// Assumptions   : 
+// Clock Cycles  : 
+//-----------------------------------------------------------------------------
+#macro ADD_ZERO_Waves(LENGTH, UNIT)
+    SET_FRAME_Property(ZERO_WAVE_TYPE, LENGTH, UNIT)
+#endm
+
+//-----------------------------------------------------------------------------
+// Macro         : ADD_ONE_Waves(LENGTH, UNIT)
+//-----------------------------------------------------------------------------
+// Description   : Add ONE waves into the P_PCM_INPUT table
+// Inputs        : - LENGTH         - Number of the One waves per unit (1 word)
+//                 - UNIT           - Unit of minimum One wave (1 word)
+// Outputs       : 
+// Register mods : xp3, XSTEP3, XCIRC3
+// Assumptions   : 
+// Clock Cycles  : 
+//-----------------------------------------------------------------------------
+#macro ADD_ONE_Waves(LENGTH, UNIT)
+    SET_FRAME_Property(ONE_WAVE_TYPE, LENGTH, UNIT)
+#endm
+
+//-----------------------------------------------------------------------------
+// Macro         : ADD_POWER_Waves(LENGTH, UNIT)
+//-----------------------------------------------------------------------------
+// Description   : Add Power waves into the P_PCM_INPUT table
+// Inputs        : - LENGTH         - Number of the Power waves per unit
+//                 - UNIT           - Unit of minimum Power wave 
+// Outputs       : 
+// Register mods : xp3, XSTEP3, XCIRC3
+// Assumptions   : 
+// Clock Cycles  : 
+//-----------------------------------------------------------------------------
+#macro ADD_POWER_Waves(LENGTH, UNIT)
+    SET_FRAME_Property(POWER_WAVE_TYPE, LENGTH, UNIT)
+#endm
+
+//-----------------------------------------------------------------------------
+// Macro         : ADD_S_Waves(LENGTH, UNIT)
+//-----------------------------------------------------------------------------
+// Description   : Add S waves into the P_PCM_INPUT table
+// Inputs        : - LENGTH         - Number of the S waves per unit
+//                 - UNIT           - Unit of minimum S wave 
+// Outputs       : 
+// Register mods : xp3, XSTEP3, XCIRC3
+// Assumptions   : 
+// Clock Cycles  : 
+//-----------------------------------------------------------------------------
+#macro ADD_S_Waves(LENGTH, UNIT)
+    SET_FRAME_Property(S_WAVE_TYPE, LENGTH, UNIT)
+#endm
+
+
+//-----------------------------------------------------------------------------
+// Macro         : ADD_CMD_FLAG(TYPE)
+//-----------------------------------------------------------------------------
+// Description   : Add a flag to indicate the next coded data is a command
+// Inputs        : - TYPE           - The type of command
+// Outputs       : 
+// Register mods : xp3, XSTEP3, XCIRC3
+// Assumptions   : 
+// Clock Cycles  : 
+//-----------------------------------------------------------------------------
+#macro ADD_CMD_Flag(TYPE)
+    SET_FRAME_Property(TYPE, 0, 0)
+#endm
+
+//-----------------------------------------------------------------------------
+// Macro         : ADD_PCM_END
+//-----------------------------------------------------------------------------
+// Description   : Add the specific frame to indicate the end of P_PCM_INPUT table
+// Inputs        : 
+// Outputs       : 
+// Register mods : xp3, XSTEP3, XCIRC3
+// Assumptions   : 
+// Clock Cycles  : 
+//-----------------------------------------------------------------------------
+#macro ADD_PCM_End
+    SET_FRAME_Property(END_PCM_INPUT, 0, 0)
+    // Restore the xp3 pointer to the base address of P_PCM_INPUT
+    //store xp3, P_PCM_INPUT
+    // Inform CM3: the PCM input is full
+    Sys_CM3_Command(0)
+#endm
+
+// ----------------------------------------------------------------------------
+//  PCM input types
+// ----------------------------------------------------------------------------
+#define CODED_DATA_TYPE             1
+#define UNCODED_DATA_TYPE           2
+#define NULL_WAVE_TYPE              4
+#define ZERO_WAVE_TYPE              8
+#define ONE_WAVE_TYPE               16
+#define POWER_WAVE_TYPE             32
+#define S_WAVE_TYPE                 64
+#define END_PCM_INPUT               0xFF
+
+#define LEVEL_SHIFT_TYPE            3
+#define CMD_GENERAL_TYPE            5
+#define CMD_SYS_ON_TYPE             7
+#define CMD_IMPEDANCE_TYPE          9
+
+
+#endif  // APP_PCM_CFI_INCLUDED

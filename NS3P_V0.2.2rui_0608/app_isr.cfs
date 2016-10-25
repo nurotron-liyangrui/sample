@@ -1,0 +1,166 @@
+// ----------------------------------------------------------------------------
+// Copyright (c) 2013 Semiconductor Components Industries, LLC
+// (d/b/a ON Semiconductor). All Rights Reserved.
+//
+// This code is the property of ON Semiconductor and may not be redistributed
+// in any form without prior written permission from ON Semiconductor. The
+// terms of use and warranty for this code are covered by contractual
+// agreements between ON Semiconductor and the licensee.
+// ----------------------------------------------------------------------------
+// app_isr.cfs
+// - Application-level ISR file
+// ----------------------------------------------------------------------------
+// $Revision: 1.11 $
+// $Date: 2013/04/12 19:06:18 $
+// ----------------------------------------------------------------------------
+
+#include <sk4_sys.cfi>
+#include "app.cfi"
+
+    Sys_Mem_Start_Segment(isr_seg, SYS_MEMSPACE_P)
+
+// ----------------------------------------------------------------------------
+// Function:       Watchdog_ISR
+// Description:    Stop the CFX (if debugging) if the watchdog
+//                 interrupt occurs.
+// Clock cycles:   4
+// Modifies:       None
+// Assumptions:    None
+// ----------------------------------------------------------------------------
+Watchdog_ISR:
+
+    breakpoint
+
+    returni
+    
+// ----------------------------------------------------------------------------
+// Function:       FIFO_0_ISR
+// Description:    Sets a flag indicating that the FIFO 0 interrupt has
+//                 occurred.
+// Clock cycles:   3
+// Modifies:       None
+// Assumptions:    None
+// ----------------------------------------------------------------------------
+FIFO_0_ISR:
+
+    returni.2d
+
+    // Set the FIFO 0 done flag
+    store x[X_FIFO_0_DONE], 1               // [ds1]
+    nop                                     // [ds2]
+
+// ----------------------------------------------------------------------------
+// Function:       HEAR_0_ISR
+// Description:    Sets a flag indicating that function chain 0 has completed
+//                 on the HEAR
+// Clock cycles:   3
+// Modifies:       None
+// Assumptions:    None
+// ----------------------------------------------------------------------------
+HEAR_0_ISR:
+
+    returni.2d
+
+    // Set the HEAR function chain 0 done flag
+    store x[X_HEAR_FUNCTION_CHAIN0_DONE], 1     // [ds1]
+    nop                                         // [ds2]
+
+// ----------------------------------------------------------------------------
+// Function:       HEAR_1_ISR
+// Description:    Sets a flag indicating that function chain 1 has completed
+//                 on the HEAR
+// Clock cycles:   3
+// Modifies:       None
+// Assumptions:    None
+// ----------------------------------------------------------------------------
+HEAR_1_ISR:
+
+    returni.2d
+
+    // Set the HEAR function chain 1 done flag
+    store x[X_HEAR_FUNCTION_CHAIN1_DONE], 1     // [ds1]
+    nop                                         // [ds2]
+
+
+
+
+// ----------------------------------------------------------------------------
+// Function:       CM3_0_ISR
+// Description:    Sets a flag indicating that command 0 from the ARM Cortex-M3
+//                 processor has arrived
+// Clock cycles:   3
+// Modifies:       None
+// Assumptions:    None
+// ----------------------------------------------------------------------------
+CM3_0_ISR:
+
+    returni.2d
+
+    // Set the ARM Cortex-M3 core command 0 done flag
+    store x[X_CM3_0_DONE], 1                    // [ds1]
+    nop                                         // [ds2]
+    
+    
+// ----------------------------------------------------------------------------
+// Function:       CM3_1_ISR
+// Description:    Sets a flag indicating that command 0 from the ARM Cortex-M3
+//                 processor has arrived
+// Clock cycles:   3
+// Modifies:       None
+// Assumptions:    None
+// ----------------------------------------------------------------------------
+CM3_1_ISR:
+
+    returni.2d
+
+    // Set the ARM Cortex-M3 core command 1 done flag
+    store x[X_CM3_1_DONE], 1                    // [ds1]
+    nop  
+// ----------------------------------------------------------------------------
+// Function:       Empty_ISR
+// Description:    Does nothing but return.
+// Clock cycles:   3
+// Modifies:       None
+// Assumptions:    None
+// ----------------------------------------------------------------------------
+Empty_ISR:
+
+    returni
+
+// ----------------------------------------------------------------------------
+// Interrupt Vector Table
+// ----------------------------------------------------------------------------
+    Sys_Mem_Start_Absolute_Segment(int_vect_seg, SYS_MEMSPACE_P, D_INT_VECT_BASE)
+
+    returni                      // System reset is at address 0, not here.
+    goto Watchdog_ISR            // Put our Watchdog ISR vector into the table.
+    goto Empty_ISR               // Timer 1
+    goto Empty_ISR               // Timer 2
+    goto Empty_ISR               // SPI
+    goto Empty_ISR               // I2C
+    goto Empty_ISR               // PCM
+    goto Empty_ISR               // GPIO
+    goto HEAR_0_ISR              // HEAR 0
+    goto HEAR_1_ISR              // HEAR 1
+    goto Empty_ISR               // HEAR 2
+    goto Empty_ISR               // HEAR 3
+    goto Empty_ISR               // HEAR 4
+    goto Empty_ISR               // HEAR 5 / UART
+    goto Empty_ISR               // HEAR 6 / Filter Engine
+    goto Empty_ISR               // HEAR 7 / SDU
+    goto FIFO_0_ISR              // FIFO 0
+    goto Empty_ISR               // FIFO 1
+    goto Empty_ISR               // FIFO 2
+    goto Empty_ISR               // FIFO 3
+    goto Empty_ISR               // FIFO 4
+    goto Empty_ISR               // FIFO 5
+    goto Empty_ISR               // FIFO 6
+    goto Empty_ISR               // FIFO 7
+    goto Empty_ISR               // Clock
+    goto Empty_ISR               // ARM Cortex-M3 SPI
+    goto Empty_ISR               // ARM Cortex-M3 PCM
+    goto Empty_ISR               // ARM Cortex-M3 I2C
+    goto CM3_0_ISR               // ARM Cortex-M3 0
+    goto CM3_1_ISR               // ARM Cortex-M3 1
+    goto Empty_ISR               // ARM Cortex-M3 2
+    goto Empty_ISR               // ARM Cortex-M3 3

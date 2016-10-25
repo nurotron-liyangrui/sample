@@ -1,0 +1,99 @@
+// ---------------------------------------------------
+// HEAR Configuration Tool, ON Semiconductor
+// 
+// Generated file - DO NOT EDIT!
+// Created from ../microcode.hct
+// ---------------------------------------------------
+#ifndef HCT_HEAR_MICROCODE_INCLUDED
+#define HCT_HEAR_MICROCODE_INCLUDED
+
+//
+// User Defined Constants
+//
+#define WOLA_La                    (256)
+#define WOLA_Ls                    (256)
+#define WOLA_N                     (256)
+#define WOLA_R                     (128)
+#define WOLA_STACKING              (WOLA_STACKING_EVEN)
+#define WOLA_ANALYSIS_MODE         (WOLA_MODE_MONO)
+#define WOLA_SAMPLE_SIZE           (WOLA_SAMPLE_18BITS)
+#define WOLA_RESULTS_OFFSET        (0x0)
+#define GAIN_VECTOR_OFFSET         (0x0)
+#define WOLA_TEMP01_OFFSET         (WOLA_RESULTS_OFFSET)
+#define WOLA_TEMP23_OFFSET         (0x0)
+#define X_WOLA_TEMP01_BASE         (D_HEAR_H01MEM_BASE + WOLA_TEMP01_OFFSET)
+#define X_WOLA_TEMP23_BASE         (D_HEAR_H23MEM_BASE + WOLA_TEMP23_OFFSET)
+#define X_ANALYSIS_RESULTS_BASE    (D_HEAR_H01MEM_BASE + WOLA_RESULTS_OFFSET)
+#define X_GAIN_TABLE_BASE          (D_HEAR_H45MEM_BASE + GAIN_VECTOR_OFFSET)
+#define X_ANALYSIS_RESULTS_ENERGY  (D_HEAR_H45MEM_BASE + 0x40)
+#define FIFO_A0_0_BASE             (0x0)
+#define FIFO_A0_0_SIZE             (WOLA_La + WOLA_R)
+#define FIFO_A0_0_BASE_PTR         (0)
+#define FIFO_A0_0_IOC_PTR          (0)
+#define X_ANALYSIS_FIFO_ADDR       (D_HEAR_A0MEM_BASE + FIFO_A0_0_BASE)
+
+
+
+//
+// FIFO Configuration
+//
+#define HCT_FIFO_A0_0_START       (0)
+#define HCT_FIFO_A0_0_LENGTH      (384)
+#define HCT_FIFO_A0_0_BASE_PTR    (0)
+#define HCT_FIFO_A0_0_IOBLOCK_PTR (0)
+#define HCT_FIFO_A0_0_BLOCK_SIZE  (128)
+
+
+
+//
+// FIFO Configuration Macro
+//
+#macro HCT_FIFO_Configure
+
+    Sys_FIFO_Configure(SYS_FIFO_A0_0,        \
+                       HCT_FIFO_A0_0_START,      \
+                       HCT_FIFO_A0_0_LENGTH,     \
+                       HCT_FIFO_A0_0_BLOCK_SIZE, \
+                       HCT_FIFO_A0_0_BASE_PTR,   \
+                       HCT_FIFO_A0_0_IOBLOCK_PTR)
+
+#endm
+
+//
+// FIFO Memory Allocation Macro
+//
+#macro HCT_FIFO_Reserve_Mem
+
+    Sys_Mem_Start_Absolute_Segment(X_HCT_FIFO_A0_0_Memory_Reserved, \
+                                   SYS_MEMSPACE_X, \
+                                   (D_HEAR_A0MEM_BASE + HCT_FIFO_A0_0_START))
+    .bss HCT_FIFO_A0_0_LENGTH
+
+
+#endm
+
+//
+// Initial Function Chain Controller Configuration
+// 
+#define function_chain0 HEAR_FC_CMD0_POS
+#define function_chain1 HEAR_FC_CMD1_POS
+
+#define HCT_HEAR_FC_ENABLE_VAL (HEAR_FC_EBL_CMD0 | \
+                                HEAR_FC_EBL_CMD1)
+#define HCT_HEAR_FC_PRIORITY_VAL (0)
+
+
+//
+// Shared Memory Addresses
+//
+.declare GAIN_A_exp
+.declare GAIN_A_gain_vector_addr
+.declare WOLA_A_Analysis_i_shift
+.declare WOLA_A_Energy_input_addr
+.declare WOLA_A_Energy_output_addr
+.declare function_chain0_entry
+.declare function_chain1_entry
+
+
+#endif // HCT_HEAR_MICROCODE_INCLUDED
+

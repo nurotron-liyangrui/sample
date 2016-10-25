@@ -1,0 +1,7 @@
+# Target To convert ARM Cortex M3 output to CFX assembly
+$(cfxDir)CM3.cfs: $(GCC_LINKER_IO_ELF_OUTPUTS)
+	@echo 'Invoking: Elf2CFS Tool'
+	@echo 'Building file: $<'
+	elf2cfs $< $@
+	@echo 'Finished building: $<'
+	@echo ' '

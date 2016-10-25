@@ -1,0 +1,527 @@
+// ----------------------------------------------------------------------------
+// $Revision: 0.1 $
+// $ $
+// $Start Date: 2016/3/25 $ 
+// $Last modified: 2016/4/25 $ 
+// ----------------------------------------------------------------------------
+
+/*
+ *  Created on: Nov 12, 2015
+ *      Author: L_Rui
+ *  --------------------------------------------------------------------------
+ *  Revision: 0.1
+ *  Modified date: Jan 20, 2016
+ */
+
+//----------------------------------------------------------------------------
+
+#include <sk4_sys.cfi>
+#include <sk4_syslib.cfi>
+#include "app.cfi"
+#include "../PCM-Coding/app_pcm.cfi"
+
+
+// ----------------------------------------------------------------------------
+// Application Version
+// ----------------------------------------------------------------------------
+
+// Set the global assembler symbol App_Version equal to the
+// pre-processor define APP_VERSION that was defined in app.cfi
+.global App_Version
+    .equ App_Version, APP_VERSION
+
+// ----------------------------------------------------------------------------
+// Main Program
+// ----------------------------------------------------------------------------
+    Sys_Mem_Start_Absolute_Segment(main, SYS_MEMSPACE_P, D_PMEM_BASE)
+
+.global main
+main:
+
+    // Clear status register on the CFX to disable interrupts, saturation,
+    // rounding, etc.
+    load sr, 0
+
+    goto start_app
+  
+    // Put the application version in P memory at address 0x8002
+.data App_Version
+
+
+start_app:
+    // Initialize stack pointer and initialize the hardware
+    call.1d Initialize
+    Sys_CFX_InitStack(X_STACK_BOTTOM)   // [ds]
+
+//----------------------------------------------------//
+        Sys_Delay(100-1)
+        load xp3, P_PCM_INPUT
+    
+        ADD_CMD_Flag(CMD_SYS_ON_TYPE)
+        ADD_S_Waves(5000, 1)
+        ADD_PCM_End
+        
+
+waitloop_power_on:
+    // Disable interrupts before checking flags
+    Sys_Int_Master_Disable
+    
+    // Check the CM3 0 done flag
+    load x0, x[X_CM3_0_DONE]
+    cmp x0, 1 ||| nop
+    goto CM3_0_done if eq
+    // Refresh the watchdog before going to sleep
+    Sys_Watchdog_Refresh
+
+    // Sleep until an interrupt is received.
+    // The interrupt controller will wake us up if any enabled interrupt
+    // is pending, even though the master interrupt enable is disabled at
+    // this point (see the Hardware Reference Manual).
+    sleep
+
+    // Re-enable interrupts using the master enable bit. This will
+    // allow us to service and acknowledge the interrupt which caused
+    // us to wake up.
+    Sys_Int_Master_Enable
+
+    // Loop back to see which interrupt has occurred
+    goto waitloop_power_on
+        
+nop
+nop
+//----------------------------------------------------//
+
+waitloop:
+
+    // Disable interrupts before checking flags
+    Sys_Int_Master_Disable
+
+
+//----------------------------------------  CIS --------------------------------------//
+    // Check the FIFO 0 done flag
+    load x0, x[X_FIFO_0_DONE]
+    cmp x0, 1 ||| nop
+    goto FIFO_0_done if eq
+
+    // Check the HEAR Function Chain 0 done flag
+    load x0, x[X_HEAR_FUNCTION_CHAIN0_DONE]
+    cmp x0, 1 ||| nop
+    goto HEAR_function_chain0_done if eq
+
+    // Check the HEAR Function Chain 1 done flag
+    load x0, x[X_HEAR_FUNCTION_CHAIN1_DONE]
+    cmp x0, 1 ||| nop
+    goto HEAR_function_chain1_done if eq
+
+//----------------------------------------  CIS --------------------------------------//
+
+
+//----------------------------------------  CM3  --------------------------------------//
+    // Check the CM3 0 done flag
+    load x0, x[X_CM3_0_DONE]
+    cmp x0, 1 ||| nop
+    goto CM3_0_done if eq
+    
+    // Check the CM3 1 done flag
+    load x0, x[X_CM3_1_DONE]
+    cmp x0, 1 ||| nop
+    goto CM3_1_done if eq
+//----------------------------------------  CM3  --------------------------------------//
+
+    // Refresh the watchdog before going to sleep
+    Sys_Watchdog_Refresh
+
+    // Sleep until an interrupt is received.
+    // The interrupt controller will wake us up if any enabled interrupt
+    // is pending, even though the master interrupt enable is disabled at
+    // this point (see the Hardware Reference Manual).
+    sleep
+
+    // Re-enable interrupts using the master enable bit. This will
+    // allow us to service and acknowledge the interrupt which caused
+    // us to wake up.
+    Sys_Int_Master_Enable
+
+    // Loop back to see which interrupt has occurred
+    goto waitloop
+    
+//**************************************************************************************************/    
+
+// ----------------------------------------------------------------------------
+// FIFO 0 done
+// ----------------------------------------------------------------------------
+FIFO_0_done:
+
+    // Clear the flag
+    store x[X_FIFO_0_DONE], 0
+
+    // Re-enable interrupts
+    Sys_Int_Master_Enable
+
+    // Launch function chain 0 (analysis)
+    Sys_HEAR_Command(function_chain0)
+
+    // Branch back to the top of the main loop
+    goto waitloop
+
+// ----------------------------------------------------------------------------
+// HEAR function chain 0 done
+// ----------------------------------------------------------------------------
+HEAR_function_chain0_done:
+
+    // Clear the flag
+    store x[X_HEAR_FUNCTION_CHAIN0_DONE], 0
+     
+nop
+    //-----------------------//
+         call CIS_mapping 
+    //----------------------//
+nop
+    // Re-enable interrupts
+    Sys_Int_Master_Enable
+
+    // Launch function chain 1 (gain)
+    Sys_HEAR_Command(function_chain1)
+
+    // Branch back to the top of the main loop
+    goto waitloop
+
+// ----------------------------------------------------------------------------
+// HEAR function chain 1 done
+// ----------------------------------------------------------------------------
+HEAR_function_chain1_done:
+
+    // Clear the flag
+    store x[X_HEAR_FUNCTION_CHAIN1_DONE], 0
+
+    // Re-enable interrupts
+    Sys_Int_Master_Enable
+
+    // Branch back to the top of the main loop
+    goto waitloop
+
+// ----------------------------------------------------------------------------
+// CM3 command 0 received
+// ----------------------------------------------------------------------------
+CM3_0_done:
+
+    // Clear the flag
+    store x[X_CM3_0_DONE], 0
+
+    load xp3, P_PCM_INPUT
+    
+    // Check the counter to find which packet to send
+    load x0, x[X_CMD_CNT]
+    add x0, x0, 1 ||| nop
+    store x[X_CMD_CNT], x0
+    
+    load x1, 2
+    cmp x0, x1 ||| nop
+    goto Level_shift if lt
+    
+    load x1, 3
+    cmp x0, x1 ||| nop
+    goto Level_freeze if lt
+    
+    load x1, 4
+    cmp x0, x1 ||| nop
+    goto MP_1_2 if lt
+    
+    load x1, 5
+    cmp x0, x1 ||| nop
+    goto HRI_MODE if lt
+    
+    load x1, 6
+    cmp x0, x1 ||| nop
+    goto PULSE_WIDTH if lt
+    
+    load x1, 7
+    cmp x0, x1 ||| nop
+    goto STIMULATION if lt
+    
+ 
+Level_shift:
+    ADD_CMD_Flag(LEVEL_SHIFT_TYPE)
+    ADD_CODED_Mem((D_XMEM_TOP - STACK_SIZE -PCM_DATA_MEM + 1),16)
+    ADD_UNCODED_Data(0x4EF7)
+    ADD_S_Waves(700,1)
+    ADD_PCM_End
+    goto waitloop_power_on
+
+Level_freeze:
+    ADD_S_Waves(300,1)
+    ADD_UNCODED_Data(0xFFFF)
+    ADD_PCM_End
+    goto waitloop_power_on    
+    
+
+MP_1_2:
+    ADD_CMD_Flag(CMD_GENERAL_TYPE)
+    ADD_CODED_Data(0x003E)
+    ADD_UNCODED_Data(0x4741)
+    ADD_ZERO_Waves(3,1)
+    ADD_S_Waves(200,1)
+    ADD_PCM_End
+    goto waitloop_power_on
+    
+HRI_MODE:
+    ADD_CMD_Flag(CMD_GENERAL_TYPE)
+    ADD_CODED_Data(0x003E)
+    ADD_UNCODED_Data(0x4C29)
+    ADD_ZERO_Waves(3,1)
+    ADD_S_Waves(200,1)
+    ADD_PCM_End
+    goto waitloop_power_on
+    
+PULSE_WIDTH:
+    ADD_CMD_Flag(CMD_GENERAL_TYPE)
+    ADD_CODED_Data(0x003E)
+    ADD_UNCODED_Data(0x5065)
+    ADD_ZERO_Waves(3,1)
+    ADD_S_Waves(200,1)
+    ADD_PCM_End
+    goto waitloop      
+    
+STIMULATION:
+    load x0, 5
+    store x[X_CMD_CNT], x0
+      
+    // Re-enable interrupts
+    //Sys_Int_Master_Enable
+
+    // Branch back to the top of the main loop
+    goto waitloop
+
+// ----------------------------------------------------------------------------
+// CM3 command 1 received
+// ----------------------------------------------------------------------------
+CM3_1_done:
+
+    // Clear the flag
+    store x[X_CM3_1_DONE], 0
+    
+    // Branch back to the top of the main loop
+    goto waitloop
+    
+    
+    
+// ----------------------------------------------------------------------------
+// CIS function 
+// ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------------------//
+CIS_mapping:
+// ----------------------------------------------------------------------------------------//
+
+    load xp1, X_FFT_MERGY_BASE
+     
+    load ystep0, 8
+            
+            //---------------------------------------------------------------------------//
+                                     //  24 channels //
+            //---------------------------------------------------------------------------//
+            
+  //-------------------------                      
+   load yp0, Y_MAP_DATA + 3 
+ //-------------------------            
+    loop.2d 24, end_CIS_mapping_loop
+    nop >>> nop  
+    nop >>> nop
+    
+    load b0, y[yp0]  >>> nop 
+       
+       load x0, 0x00ff00 
+       load x1, 0x0000ff
+       
+       and a0, b0, x0 ||| nop  // loop count 
+       shra  a0, 8    ||| nop
+       
+       and a1, b0, x1 ||| nop  // start
+       shll a1, 1     ||| nop
+              
+       load xp0, X_ANALYSIS_RESULTS_ENERGY + 2 
+       
+       move b0, xp0   >>> nop
+       add b0, b0, a1 ||| nop
+       move xp0, b0   >>> nop
+       
+       load a1, 0 >>> nop
+       store x[xp1], a0 >>> nop
+ //-------------------------
+         loop.2d a0, end_CIS_mapping_inner1_loop
+         nop >>> nop 
+         nop >>> nop 
+         
+         load b0, x[xp1] >>> nop 
+         
+         load b1.h, x[xp0++] >>> nop
+         load b1.l, x[xp0++] >>> nop
+         
+         add b0, b0, b1    ||| nop 
+         
+         store x[xp1], b0  >>> nop
+         nop
+ //-------------------------        
+end_CIS_mapping_inner1_loop:
+         nop
+         
+         shra  b0, 3    ||| nop
+         store x[xp1++], b0 >>> nop       
+         load b1, y[yp0 += ystep0] >>> nop
+ //-------------------------           
+end_CIS_mapping_loop:
+             nop
+      
+            //---------------------------------------------------------------------------//
+                                     //  24 channels sorting //
+            //---------------------------------------------------------------------------//
+            
+            nop
+  
+  SetAnalysisBandRanks:
+            
+             Sys_Mem_FillX( 0x0, X_ENERGY_SORTING_EL_BASE, 24 )
+            
+            //------------------------------------------------------------
+            
+            load xp2, X_ENERGY_SORTING_EL_BASE 
+            load xp1, X_ENERGY_SORTING_BASE
+            load a1, 0 ||| nop
+            
+                loop.2d 8, end_CIS_energy_sorting_loop
+                   nop >>> nop  
+                   nop >>> nop
+                      
+                      load xp0, X_FFT_MERGY_BASE
+                      load x0, x[xp0++] >>> nop    
+                      load x1, x[xp0++] >>> nop           
+                      //-----------------------------------------------------------
+                      
+                      loop.2d 24, end_CIS_energy_sorting_inner_loop
+                         nop >>> nop  
+                         nop >>> nop                                     
+                              
+                              cmp  x0, x1 ||| nop
+                              goto greater_than_f1 if gt
+                              
+                              move a0, xp0  >>> nop
+                              move x0, x1   >>> nop
+                               
+                              greater_than_f1:                                
+                                                           nop >>> nop  
+                         nop >>> nop 
+                          load x1, x[xp0++]   >>> nop
+                     end_CIS_energy_sorting_inner_loop:
+                     nop
+                     
+                      store x[xp1++],   x0 >>> nop
+                      sub a0, a0, 1      ||| nop 
+                      store x[xp2++],   a0 >>> nop
+                      
+                       move xp0, a0  >>> nop
+                      store x[xp0], a1 >>> nop
+                      
+            
+                 end_CIS_energy_sorting_loop:
+                 nop
+             
+             nop
+             nop
+             
+             
+             // -------- Write stimulate patterns into the share memory ------------------
+             load xp3, P_PCM_INPUT
+//             load xp4, X_ENERGY_SORTING_EL_BASE
+//             
+//             load x0, x[xp4] >>> nop        
+//             load x1, 0x0000FF
+//             and x0, x0, x1 ||| nop             // Load the EL index
+//             shll x0, 11 ||| nop
+//             load x1, 0x0390
+//             or x0, x0, x1 ||| nop              // Load the amplitude
+//             
+//             // Check odd-even bit
+//             move y0, x0 >>> nop
+//             move y1, x0 >>> nop
+//             shra y1, 8 ||| nop
+//             xor y0, y0, y1 ||| nop
+//             move y1, y0 ||| nop
+//             shra y1, 4 ||| nop
+//             xor y0, y0, y1 ||| nop
+//             move y1, y0 >>> nop
+//             shra y1, 2 ||| nop
+//             xor y0, y0, y1 ||| nop
+//             move y1, y0 >>> nop
+//             shra y1, 1 ||| nop
+//             xor y0, y0, y1 ||| nop
+//             and y0, y0, 0x01 ||| nop
+//             
+//             or y0, x0, y0 ||| nop              // Load check odd-even bit         
+//             
+//             ADD_CODED_Data(0x003C)
+//             //ADD_UNCODED_Data(0x6B91)
+//             
+//             // Add the first frame
+//             SET_FRAME_Property(UNCODED_DATA_TYPE, 1, 1)
+//             move x0, y0 >>> nop
+//             store P[xp3++], x0
+//             ADD_ZERO_Waves(4,3)
+//             ADD_PCM_End
+
+    // Check the counter to find which packet to send
+    load x0, x[X_PATTERN_CNT]
+    add x0, x0, 1 ||| nop
+    store x[X_PATTERN_CNT], x0
+    
+    load x1, 2
+    cmp x0, x1 ||| nop
+    goto Pattern_1 if lt
+    
+    load x1, 3
+    cmp x0, x1 ||| nop
+    goto Pattern_2 if lt
+    
+Pattern_1:    
+    ADD_CODED_Data(0x003C)
+    ADD_UNCODED_Data(0x6B91)
+    ADD_ZERO_Waves(4,3)
+    
+    ADD_CODED_Data(0x003C)
+    ADD_UNCODED_Data(0x7B90)
+    ADD_ZERO_Waves(4,3)
+    
+    ADD_CODED_Data(0x003C)
+    ADD_UNCODED_Data(0x8A61)
+    ADD_ZERO_Waves(4,3)
+    
+    ADD_CODED_Data(0x003C)
+    ADD_UNCODED_Data(0x9A71)
+    ADD_ZERO_Waves(4,3) 
+    ADD_PCM_End
+    goto GetMappingValue
+    
+Pattern_2:
+    ADD_CODED_Data(0x003C)
+    ADD_UNCODED_Data(0x9A71)
+    ADD_ZERO_Waves(4,3) 
+    
+    ADD_CODED_Data(0x003C)
+    ADD_UNCODED_Data(0x8A61)
+    ADD_ZERO_Waves(4,3)
+    
+    ADD_CODED_Data(0x003C)
+    ADD_UNCODED_Data(0x7B90)
+    ADD_ZERO_Waves(4,3)
+    
+    ADD_CODED_Data(0x003C)
+    ADD_UNCODED_Data(0x6B91)
+    ADD_ZERO_Waves(4,3)
+    ADD_PCM_End
+    load x0, 0
+    store x[X_PATTERN_CNT], x0
+             
+    GetMappingValue: 
+                        
+    // Return from function call
+    return        
+//-----------------------------------------------------------------//
+//-----------------------------------------------------------------//

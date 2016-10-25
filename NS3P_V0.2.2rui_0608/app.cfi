@@ -1,0 +1,511 @@
+/*
+ * app.cfi
+ *  This file defines the top level constants in the DSP core
+ *  Created on: Nov 12, 2015
+ *      Author: L_Rui
+ *  --------------------------------------------------------------------------
+ *  app.cfi
+ *  - Main application-level include file
+ *  --------------------------------------------------------------------------
+ *  Revision: 0.1
+ *  Modified date: Jan 20, 2016
+ */
+
+// --------------------------------------------------------------------------
+// app.cfi
+// - Main application-level include file
+//  --------------------------------------------------------------------------
+// $Revision: 0.1 $
+// $ $
+// $Start Date: 2016/3/25 $ 
+// $Last modified: 2016/4/25 $ 
+// ----------------------------------------------------------------------------
+
+#ifndef APP_CFI_INCLUDED
+#define APP_CFI_INCLUDED
+
+#include "microcode.cfi"
+
+// ----------------------------------------------------------------------------
+// Application Version
+// ----------------------------------------------------------------------------
+#define APP_VERSION_MAJOR               0x01
+#define APP_VERSION_MINOR               0x00
+#define APP_VERSION_REVISION            0x01
+
+#define APP_VERSION                     (APP_VERSION_MAJOR << 12    | \
+                                         APP_VERSION_MINOR << 8     | \
+                                         APP_VERSION_REVISION)
+
+// ----------------------------------------------------------------------------
+// Compile-time Configuration Parameters
+// ----------------------------------------------------------------------------
+
+// Define the debug port access mode to disable restricted mode
+#define DEBUG_PORT_ACCESS_MODE          ACCESS_UNRESTRICTED
+
+// Configuration for the status register
+// Turn on flag updates so that arithmetic instructions set status flags.
+// Turn on saturation so that stored double-precision results are
+// saturated to [-1, 1).
+// Enable biased rounding and disable interrupts during initialization.
+#define SR_VAL                          (SR_FLAG_UPD_ENABLE         | \
+                                         SR_SATURATE_ENABLE         | \
+                                         SR_ROUND_ENABLE            | \
+                                         SR_INT_DISABLE             | \
+                                         SR_BIAS_ENABLE)
+
+// Define the system priority value to give priority to the CFX when
+// accessing the FIFOs and shared memory
+#define SYSTEM_PRIORITY_VAL             SYSTEM_PRIORITY_CFX
+
+// Define the system priority value to give priority to the CFX when
+// accessing the ARM Cortex-M3 processor memory
+#define SYSTEM2_PRIORITY_VAL            SYSTEM2_PRIORITY_CFX
+
+// ----------------------------------------------------------------------------
+// Configuration for the clock         // Set SYSCLK to 6.4 MHz
+// ----------------------------------------------------------------------------
+// Available SYSCLK Frequencies: SYS_FREQ_1M28, SYS_FREQ_1M92,
+//                               SYS_FREQ_2M56, SYS_FREQ_3M20,
+//                               SYS_FREQ_3M84, SYS_FREQ_4M48,
+//                               SYS_FREQ_5M12, SYS_FREQ_5M76,
+//                               SYS_FREQ_6M40, SYS_FREQ_7M04,
+//                               SYS_FREQ_7M68, SYS_FREQ_8M32,
+//                               SYS_FREQ_8M96, SYS_FREQ_9M60,
+//                               SYS_FREQ_10M24.
+#define SYSCLK_FREQ                     SYS_FREQ_6M40
+
+// If clock calibration values are not available in EEPROM, use the
+// default value for an uncalibrated 2.56 MHz clock
+#define OSC_0_VAL_DEFAULT               OSC_FREQ_2M56
+
+// Enable the oscillator and set the multiplier to 1X
+#define OSC_1_VAL                       (OSC_ENABLE                 | \
+                                         OSC_MULTIPLY_BY_2)
+
+// Enable the primary oscillator, disable EXTCLK and its pull-up, and set the
+// HEARCLK and CM3CLK prescale values to 1
+#define CLOCKCONFIG0_VAL                (SYSCLK_SEL_DEFAULT         | \
+                                         EXTCLK_DISABLED            | \
+                                         HEARCLK_PRESCALE_1_000     | \
+                                         EXTCLK_PU_DISABLED         | \
+                                         CM3CLK_PRESCALE_1)
+
+
+// Set the SLOWCLK prescale value to 2, such that SLOWCLK runs at 3.2MHz,
+// disable system clock double access mode and set the UCLK prescale value
+// to 2. Configure PCM clocking with the default settings. Set the SLOWCLK to be
+// configured independently from SDMCLK (the sigma-delta modulator frequency
+// is thus controlled through A_O_SDMCLK_CTRL).
+#define CLOCKCONFIG1_VAL                (UCLK_SRC_SYSCLK            | \
+                                         DBL_ACCESS_MODE_DISABLE    | \
+                                         UCLK_PRESCALE_4            | \
+                                         SLOWCLK_PRESCALE_4         | \
+                                         SLOWCLK_SRC_SYSCLK)
+
+// Disable the PLL, set the VCO to free-running mode and set the calibration
+// mode to internal.
+
+#define PLL_CTRL_0_VAL                  (PLL_DISABLE                | \
+                                         PLL_FREE_RUN               | \
+                                         INTERNAL_CALIBRATION_MODE)
+
+// Also disable SDMCLK synchronization and disable the re-sync interrupt.
+#define CLK_SYNC_VAL                    (CLK_SYNC_DISABLE           | \
+                                         CLK_SYNC_TOLERANCE_LOW     | \
+                                         CLK_RESYNC_INT_DISABLE)
+
+// Configure the sigma-delta modulator prescaler. The SDMCLK is derived from
+// SYSCLK and is typically set to match the SLOWCLK frequency.
+#define O_SDMCLK_CTRL_VAL               SDMCLK_PRESCALE_2
+
+// Define the SLOWCLK rate and sampling frequency. These values are specified
+// in Hz and are used by the Sys_Calc_Sample_Freq_Val() macro to calculate the
+// proper value of SYS_CALC_SF. This value is then used to configure the ADCs.
+#define SLOWCLK_FREQUENCY               3200000
+#define SAMPLE_FREQUENCY                16000
+// ---------------------------------------------------------------------------
+// Configuration for ADC, DAC, IOC, etc.
+// ---------------------------------------------------------------------------
+
+// Configure ADC sampling to bypass the comparator buffer and disable high
+// frequency mode
+#define ADC_SAMPLE_FREQ_CFG            (ADC_COMP_BUFFER_BYPASS      | \
+                                        ADC_HIGH_FREQ_DISABLE)
+
+// -----------------------------------------------------------------------------------------------------------------//
+// Configuration values used to disable LSAD, ADCs, DACs, and IOC during system
+// initialization
+// -----------------------------------------------------------------------------------------------------------------//
+// Disable LSAD
+#define LSAD_CTRL_DISABLE_VAL           (LSAD_CTRL_DISABLE              | \
+                                         LSAD_CTRL_CH0_MODE_TRIMMER     | \
+                                         LSAD_CTRL_CH1_MODE_TRIMMER     | \
+                                         LSAD_CTRL_CH2_MODE_TRIMMER     | \
+                                         LSAD_CTRL_CH3_MODE_TRIMMER     | \
+                                         LSAD_CTRL_CH4_MODE_TRIMMER     | \
+                                         LSAD_CTRL_CH5_MODE_TRIMMER     | \
+                                         LSAD_CTRL_VBAT_MODE_TRIMMER    | \
+                                         LSAD_CTRL_GND_MODE_TRIMMER)
+
+// Disable ADCs
+#define ADC_CTRL_0_DISABLE_VAL          (ADC_DISABLE                | \
+                                         ADC_SEL_AI0_AI4            | \
+                                         PGAIN_BYPASS               | \
+                                         ADC_GAIN_0DB               | \
+                                         LINEOUT_DISABLE            | \
+                                         LPF_IN_ACTIVE_20KHZ)
+
+#define ADC_CTRL_1_DISABLE_VAL          (ADC_DISABLE                | \
+                                         ADC_SEL_AI1_AI5            | \
+                                         PGAIN_BYPASS               | \
+                                         ADC_GAIN_0DB               | \
+                                         LINEOUT_DISABLE            | \
+                                         LPF_IN_ACTIVE_20KHZ)
+
+#define ADC_CTRL_2_DISABLE_VAL          (ADC_DISABLE                | \
+                                         ADC_SEL_AI2                | \
+                                         PGAIN_BYPASS               | \
+                                         ADC_GAIN_0DB               | \
+                                         LINEOUT_DISABLE            | \
+                                         LPF_IN_ACTIVE_20KHZ)
+
+#define ADC_CTRL_3_DISABLE_VAL          (ADC_DISABLE                | \
+                                         ADC_SEL_AI3                | \
+                                         PGAIN_BYPASS               | \
+                                         ADC_GAIN_0DB               | \
+                                         LINEOUT_DISABLE            | \
+                                         LPF_IN_ACTIVE_20KHZ)
+
+// Disable output drivers
+#define OUTPUT_CTRL_DISABLE_VAL         (OD0_DISABLE                | \
+                                         OD0_HIGHPOWER_DISABLE      | \
+                                         OD1_DISABLE                | \
+                                         OD1_HIGHPOWER_DISABLE)
+
+// Disable the DACs and configure all DAC settings with default values
+#define DAC_AO_CTRL_DISABLE_VAL         (AO0_UNMUTE                 | \
+                                         AO0_ATTENUATE_BYPASS       | \
+                                         AO0_CURRENT_1_0X           | \
+                                         AO0_DISABLE                | \
+                                         AO0_LFP_OUT_ACTIVE_12KHZ   | \
+                                         AO1_UNMUTE                 | \
+                                         AO1_ATTENUATE_BYPASS       | \
+                                         AO1_CURRENT_1_0X           | \
+                                         AO1_DISABLE                | \
+                                         AO1_LFP_OUT_ACTIVE_12KHZ   | \
+                                         DIFF_OUT_DISABLE           | \
+                                         DIFF_OUT_CH0)
+
+// Disable the DMIC output interface
+#define DMIC_OUTPUT_CTRL_DISABLE_VAL    (DMIC0_OUT_DISABLE          | \
+                                         DMIC1_OUT_DISABLE          | \
+                                         DMIC0_LOW_SRC_CH0          | \
+                                         DMIC0_HIGH_SRC_CH0         | \
+                                         DMIC1_LOW_SRC_CH0          | \
+                                         DMIC1_HIGH_SRC_CH0)
+
+// Disable the interface between the ADCs and the IOC
+#define IOC_ADC_CFG_DISABLE_VAL         (IOC_INPUT_CFG_ADC0_NONE    | \
+                                         IOC_INPUT_CFG_ADC1_NONE    | \
+                                         IOC_INPUT_CFG_ADC2_NONE    | \
+                                         IOC_INPUT_CFG_ADC3_NONE)
+
+// Disable the interface between the PCM input and the IOC
+#define IOC_PCM_CFG_DISABLE_VAL         (IOC_INPUT_CFG_PCM0_NONE    | \
+                                         IOC_INPUT_CFG_PCM1_NONE)
+
+// Disable the interface between the output (DACs and PCM) and the IOC
+#define IOC_OUTPUT_CFG_DISABLE_VAL      (IOC_OUTPUT_CFG_DAC0_NONE            | \
+                                         IOC_OUTPUT_CFG_DAC1_NONE            | \
+                                         IOC_OUTPUT_CFG_PCM_SYNC_ADCDAC_DIS  | \
+                                         IOC_OUTPUT_CFG_PCM0_NONE            | \
+                                         IOC_OUTPUT_CFG_PCM1_NONE)
+
+// Disable IDRX
+#define IDRX_DISABLE_VAL                IDRX_DISABLE
+
+// -----------------------------------------------------------------------------------------------------------------//
+// -----------------------------------------------------------------------------------------------------------------//
+
+
+// ---------------------------------------------------------------------------
+// Configuration value for audio multiplexing and filtering, and rounding at
+// SDM inputs and interpolation filter inputs
+// ---------------------------------------------------------------------------
+#define AUDIO_MUX_CFG_VAL               (ROUND_NORMAL               | \
+                                         SDM0_ROUND                 | \
+                                         SDM1_ROUND                 | \
+                                         INT_FILTER0_ROUND          | \
+                                         INT_FILTER1_ROUND          | \
+                                         ADC0_OUT                   | \
+                                         ADC1_OUT                   | \
+                                         ADC2_OUT                   | \
+                                         ADC3_OUT                   | \
+                                         IOC_SRC0_DEC_FILTER        | \
+                                         IOC_SRC1_DEC_FILTER        | \
+                                         IOC_SRC2_DEC_FILTER        | \
+                                         IOC_SRC3_DEC_FILTER        | \
+                                         INT_FILTER0_IOC            | \
+                                         INT_FILTER1_IOC            | \
+                                         SDM0_INT_FILTER            | \
+                                         SDM1_INT_FILTER)
+
+// Enable ADC0 with preamp and ADC gains set to zero, enable the low-pass
+// filter with cut-off at 20 kHz and disable lineout.
+#define ADC0_CTRL_VAL                   (ADC_ENABLE                 | \
+                                         ADC_SEL_AI0_AI4            | \
+                                         PGAIN_BYPASS               | \
+                                         ADC_GAIN_0DB               | \
+                                         LINEOUT_DISABLE            | \
+                                         LPF_IN_ACTIVE_20KHZ)
+                                         
+#define ADC1_CTRL_VAL                   (ADC_ENABLE                 | \
+                                         ADC_SEL_AI1_AI5            | \
+                                         PGAIN_30DB                 | \
+                                         ADC_GAIN_0DB               | \
+                                         LINEOUT_DISABLE            | \
+                                         LPF_IN_ACTIVE_20KHZ)
+
+
+//--------------------------------------------------------------------------
+// Define decimation filter gain value for each channel to be unity gain. The
+// decimation filter gain value is specified as (desired gain)*10^7 and is
+// used by the macro Sys_Calc_Gain_Factor_Val() to calculate the proper value
+// for the decimation filter gain factor.
+//--------------------------------------------------------------------------
+#define DF_UNITY_GAIN                   10000000
+
+//--------------------------------------------------------------------------
+// Define the decimation filter configuration - enable the decimation filter,
+// unmute the ADC, select the frequency band, set the DC removal cutoff
+// frequency and set the sampling delay
+//--------------------------------------------------------------------------
+#define ADC_DEC_CTRL_0_VAL              (BAND_SELECT_ADC_0K_8K      | \
+                                         ADC_INTEGER_DELAY_0        | \
+                                         ADC_UNMUTE                 | \
+                                         ADC_DEC_ENABLE             | \
+                                         ADC_DC_REMOVE_CUTOFF_20HZ)
+
+#define ADC_DEC_CTRL_1_VAL              ADC_DEC_CTRL_0_VAL
+#define ADC_DEC_CTRL_2_VAL              ADC_DEC_CTRL_0_VAL
+#define ADC_DEC_CTRL_3_VAL              ADC_DEC_CTRL_0_VAL
+
+//----------------------------------------------------------------------------
+// Enable OD0, disable high-power mode and set the positive and negative pads
+// of the output driver (RCVR+ and RCVR-) to toggle on the falling SYSCLK edge.
+//----------------------------------------------------------------------------
+#define OUTPUT_CTRL_VAL                 (OD0_ENABLE                 | \
+                                         OD0_HIGHPOWER_DISABLE      | \
+                                         OD0_POS_EDGE_FALLING       | \
+                                         OD0_NEG_EDGE_FALLING       | \
+                                         OD1_DISABLE                | \
+                                         OD1_HIGHPOWER_DISABLE      | \
+                                         OD1_POS_EDGE_FALLING       | \
+                                         OD1_NEG_EDGE_FALLING)
+
+//----------------------------------------------------------------------------
+// Select VREG as the source for VMIC
+//----------------------------------------------------------------------------
+#define VMIC_CTRL_VAL                   VMIC_SW_VREG
+
+
+//----------------------------------------------------------------------------//
+// Configuration for the IOC
+//----------------------------------------------------------------------------//
+// ADC0 -> FIFO A0_0
+#define IOC_ADC_CFG_VAL                 (IOC_INPUT_CFG_ADC0_FA0_0   | \
+                                         IOC_INPUT_CFG_ADC1_NONE    | \
+                                         IOC_INPUT_CFG_ADC2_NONE    | \
+                                         IOC_INPUT_CFG_ADC3_NONE)
+// ADC1 -> FIFO A0_0
+#define IOC_ADC_CFG_VAL1                (IOC_INPUT_CFG_ADC0_NONE    | \
+                                         IOC_INPUT_CFG_ADC1_FA0_0   | \
+                                         IOC_INPUT_CFG_ADC2_NONE    | \
+                                         IOC_INPUT_CFG_ADC3_NONE)
+
+
+// Define the interface between the PCM input and the IOC
+#define IOC_PCM_CFG_VAL                 (IOC_INPUT_CFG_PCM0_NONE    | \
+                                         IOC_INPUT_CFG_PCM1_NONE)
+
+// FIFO B0_0 -> OD0
+#define IOC_OUTPUT_CFG_VAL              (IOC_OUTPUT_CFG_DAC0_NONE          | \
+                                         IOC_OUTPUT_CFG_DAC1_NONE           | \
+                                         IOC_OUTPUT_CFG_PCM_SYNC_ADCDAC_DIS | \
+                                         IOC_OUTPUT_CFG_PCM0_NONE           | \
+                                         IOC_OUTPUT_CFG_PCM1_NONE)
+//----------------------------------------------------------------------------
+
+
+//----------------------------------------------------------------------------
+// Enable double-access mode for the FIFOs.
+// When a single source/destination is used as input/output for a FIFO, double-
+// access mode is recommended. When multiple sources/destinations share the same
+// FIFO, double-access mode must be disabled for proper functionality.
+//----------------------------------------------------------------------------
+
+#define IOC_FIFO_ACCESS_VALUE           (FIFO_A0_0_DBL_ACC_EN       | \
+                                         FIFO_B0_0_DBL_ACC_EN)
+
+// Right-align the input and output data 
+#define IOC_FIFO_SHIFT_VALUE            (IOC_FIFO_ADC0_SHIFT_RIGHT  | \
+                                         IOC_FIFO_ADC1_SHIFT_RIGHT  | \
+                                         IOC_FIFO_ADC2_SHIFT_RIGHT  | \
+                                         IOC_FIFO_ADC3_SHIFT_RIGHT  | \
+                                         IOC_FIFO_DAC0_SHIFT_RIGHT  | \
+                                         IOC_FIFO_DAC1_SHIFT_RIGHT)
+
+// Enable auto-mute for the output FIFO B0_0, so that the output is silent if
+// no new data is being written into the FIFO (for example, when the CFX is paused)
+#define FIFO_B0_0_AUTO_MUTE_CFG_VAL     FIFO_B0_0_AUTO_MUTE_ENABLE
+
+// ---------------------------------------------------------------------------------------------------------------// 
+// ----------------------------------------------------------------------------
+// Configure DIOs 16-19 for the PCM interface:
+// ----------------------------------------------------------------------------
+// Set the drive strength low, disable the LPF and strong pull-up, and enable
+// the weak pull-up
+#define DIO_PCM_CFG                     (DIO_HIGH_DRIVE             | \
+                                         DIO_LPF_DISABLE            | \
+                                         DIO_WEAK_PU_ENABLE         | \
+                                         DIO_STRONG_PU_DISABLE)
+
+//  DIO16 - PCM_CLK/UCLK (output)
+//  DIO17 - PCM_SERI (input)
+//  DIO18 - PCM_SERO (output)
+//  DIO19 - PCM_FR (output)
+#define DIO_PCM_CLK                     10
+#define DIO_PCM_SERI                    11
+#define DIO_PCM_SERO                    26
+#define DIO_PCM_FR                      12
+
+//  UCLK configuration for the PCM_CLK DIO
+#define DIO_CFG_UCLK                    (DIO_PCM_CFG                | \
+                                         DIO_MODE_UCLK)
+                                         
+                                         
+//  Configure DIO 20 for the GPIO input                                         
+#define DIO_GPIO_IN_CFG                 (DIO_LOW_DRIVE              | \
+                                         DIO_LPF_DISABLE            | \
+                                         DIO_WEAK_PU_ENABLE         | \
+                                         DIO_STRONG_PU_DISABLE       | \
+                                         DIO_MODE_C_GPIO_IN_0)
+                                         
+//  Configure DIO 29 for the GPIO output                                         
+#define DIO_GPIO_OUT_CFG                (DIO_HIGH_DRIVE             | \
+                                         DIO_LPF_DISABLE            | \
+                                         DIO_WEAK_PU_ENABLE         | \
+                                         DIO_STRONG_PU_DISABLE      | \
+                                         DIO_MODE_C_GPIO_OUT_0)                                         
+#define DIO_GPIO_IN_PIN                 8
+#define DIO_GPIO_OUT_IND                21
+#define DIO_GPIO_OUT_SYNC               16                                         
+// ---------------------------------------------------------------------------------------------------------------// 
+                                         
+//
+// Configuration for the CFX's interrupt controller
+//
+
+// Configure interrupt multiplexing. Specify UART or HEAR_5; Filter Engine or
+// HEAR_6; SDU or HEAR_7.
+#define INT_MUX_VAL                     (INT_SEL_HEAR_5             | \
+                                         INT_SEL_HEAR_6             | \
+                                         INT_SEL_HEAR_7)
+
+//------------------------------------------------------------------------------
+// Set FIFO A0_0 as the source for FIFO interrupt 0 on the CFX / INPUT BUFFER FILLED
+//------------------------------------------------------------------------------
+ 
+#define CFX_FIFO_INT_NUM                0
+#define CFX_FIFO_INT_SOURCE             SYS_FIFO_A0_0
+
+
+
+// The watchdog and master interrupt are also enabled
+#define INT_ENABLE_VAL                  (INT_EBL_MASTER             | \
+                                         INT_EBL_WATCHDOG           | \
+                                         INT_EBL_HEAR_0             | \
+                                         INT_EBL_HEAR_1             | \
+                                         INT_EBL_FIFO_0             | \
+                                         INT_EBL_CM3_0)             // Enable the CM3 0 interrupt
+
+// Define the interrupt status value for acknowledging all interrupts during
+// initialization
+#define INT_STATUS_VAL                  INT_ACK_ALL_INTS
+
+// All interrupts have normal priority
+#define INT_PRIORITY_VAL                0
+
+// Size of the stack
+#define STACK_SIZE                      0x80
+
+// Size of the PCM data input
+#define PCM_DATA_MEM                    0x10
+
+
+// ------------------------------------------------------------------------------
+// Configuration for the Filter Engine
+// ------------------------------------------------------------------------------
+
+// Disable all Filter Engine interrupt sources
+#define FENG_INT_DISABLE_VAL            0
+
+// Acknowledge all Filter Engine interrupt sources
+#define FENG_INT_ACK_ALL_VAL            0xFFFFFFF
+
+// Use the default value 0 for coefficient offset since dynamic coefficient
+// update is not used.
+// Enable output shadow register for Filter Engine output 5, so that output 5
+// is updated at the start of the next Filter Engine program execution. This is
+// recommended for output signals not in the low-delay path.
+// Enable inputs 0 and 5, and select input 0 as the source that starts Filter
+// Engine processing.
+#define FENG_CFG_VAL                    (0 << FENG_CFG_COEFF_OFFSET_POS)   | \
+                                         FENG_OSR5_ENABLE           | \
+                                         FENG_FIN0_ENABLE           | \
+                                         FENG_FIN5_ENABLE           | \
+                                         FENG_SRI_SELECT_IN0)
+
+// Enable sources for Filter Engine interrupt: either OVERLOAD or OUT0 will set
+// the interrupt.
+// Note that the Filter Engine interrupt is not enabled in this sample
+// application.
+#define FENG_INT_ENABLE_VAL             (INT_EBL_FENG_OVERLOAD      | \
+                                         INT_EBL_FENG_OUT0)
+
+// ----------------------------------------------------------------------------
+//  Application Variables
+// ----------------------------------------------------------------------------
+.declare X_STACK_BOTTOM
+.declare X_FIFO_0_DONE
+.declare X_HEAR_FUNCTION_CHAIN0_DONE
+.declare X_HEAR_FUNCTION_CHAIN1_DONE
+
+// ----------------------------------------------------------------------------
+//  Application Variables
+// ----------------------------------------------------------------------------
+.declare X_STACK_BOTTOM
+.declare X_CM3_0_DONE
+.declare X_CM3_1_DONE
+.declare X_CMD_CNT
+.declare P_PCM_INPUT
+.declare P_PCM_RET
+
+.declare X_PATTERN_CNT
+
+// ----------------------------------------------------------------------------
+//  Application Routines
+// ----------------------------------------------------------------------------
+.declare Initialize
+
+
+#define X_FFT_MERGY_BASE         0x600
+#define X_ENERGY_SORTING_BASE    0x620
+#define X_ENERGY_SORTING_EL_BASE 0x640
+#define X_ENERGY_SORTING_AM_BASE 0x660
+
+
+
+#endif  // APP_CFI_INCLUDED

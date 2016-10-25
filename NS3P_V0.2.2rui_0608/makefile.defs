@@ -1,0 +1,17 @@
+# Determine where CFX source code exists to be able to add generated CM3 files
+cfxDir = $(dir $(wordlist 1,1,$(CFS_SRCS)))
+
+# Only Add Generated CM3 files to object list if C code currently exists in the project
+# and the object isn't already in the object list
+ifneq ($(strip $(C_OBJS)),)
+ifeq (,$(findstring $(subst ../,,$(cfxDir)CM3.o),$(CFS_OBJS)))
+CFS_OBJS += $(subst ../,,$(cfxDir)CM3.o)
+endif
+endif
+
+# Add Generated headers, summary files and CM3 assembly to clean list
+RM += \
+$(subst ../,,$(HCT_SRCS:.hct=.cfi)) \
+$(subst ../,,$(HCT_SRCS:.hct=.smy)) \
+$(cfxDir)CM3.cfs \
+$(subst ../,,$(cfxDir)CM3.dep)

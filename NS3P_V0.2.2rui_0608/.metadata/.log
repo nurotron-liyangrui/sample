@@ -1,0 +1,58 @@
+!SESSION 2016-04-25 11:21:47.218 -----------------------------------------------
+eclipse.buildId=M20110909-1335
+java.version=1.6.0_16
+java.vendor=Sun Microsystems Inc.
+BootLoader constants: OS=win32, ARCH=x86, WS=win32, NL=en_US
+Framework arguments:  -product com.signaklara.np5.platform.ide
+Command-line arguments:  -os win32 -ws win32 -arch x86 -product com.signaklara.np5.platform.ide
+
+!ENTRY org.eclipse.ui.workbench 2 0 2016-04-25 11:22:01.859
+!MESSAGE A handler conflict occurred.  This may disable some commands.
+!SUBENTRY 1 org.eclipse.ui.workbench 2 0 2016-04-25 11:22:01.859
+!MESSAGE Conflict for 'com.signaklara.skt.debug.ui.localLaunch.run':
+HandlerActivation(commandId=com.signaklara.skt.debug.ui.localLaunch.run,
+	handler=org.eclipse.debug.internal.ui.launchConfigurations.LaunchShortcutExtension$LaunchCommandHandler@11563a2,
+	expression=,sourcePriority=0)
+HandlerActivation(commandId=com.signaklara.skt.debug.ui.localLaunch.run,
+	handler=org.eclipse.debug.internal.ui.launchConfigurations.LaunchShortcutExtension$LaunchCommandHandler@1404c51,
+	expression=,sourcePriority=0)
+
+!ENTRY org.eclipse.ui.workbench 2 0 2016-04-25 11:22:01.859
+!MESSAGE A handler conflict occurred.  This may disable some commands.
+!SUBENTRY 1 org.eclipse.ui.workbench 2 0 2016-04-25 11:22:01.859
+!MESSAGE Conflict for 'com.signaklara.skt.debug.ui.localLaunch.debug':
+HandlerActivation(commandId=com.signaklara.skt.debug.ui.localLaunch.debug,
+	handler=org.eclipse.debug.internal.ui.launchConfigurations.LaunchShortcutExtension$LaunchCommandHandler@166b0df,
+	expression=,sourcePriority=0)
+HandlerActivation(commandId=com.signaklara.skt.debug.ui.localLaunch.debug,
+	handler=org.eclipse.debug.internal.ui.launchConfigurations.LaunchShortcutExtension$LaunchCommandHandler@e62a39,
+	expression=,sourcePriority=0)
+!SESSION 2016-04-25 11:24:09.125 -----------------------------------------------
+eclipse.buildId=M20110909-1335
+java.version=1.6.0_16
+java.vendor=Sun Microsystems Inc.
+BootLoader constants: OS=win32, ARCH=x86, WS=win32, NL=en_US
+Framework arguments:  -product com.signaklara.np5.platform.ide
+Command-line arguments:  -os win32 -ws win32 -arch x86 -product com.signaklara.np5.platform.ide
+
+!ENTRY org.eclipse.ui.workbench 2 0 2016-04-25 11:24:31.218
+!MESSAGE A handler conflict occurred.  This may disable some commands.
+!SUBENTRY 1 org.eclipse.ui.workbench 2 0 2016-04-25 11:24:31.218
+!MESSAGE Conflict for 'com.signaklara.skt.debug.ui.localLaunch.run':
+HandlerActivation(commandId=com.signaklara.skt.debug.ui.localLaunch.run,
+	handler=org.eclipse.debug.internal.ui.launchConfigurations.LaunchShortcutExtension$LaunchCommandHandler@10eaeda,
+	expression=,sourcePriority=0)
+HandlerActivation(commandId=com.signaklara.skt.debug.ui.localLaunch.run,
+	handler=org.eclipse.debug.internal.ui.launchConfigurations.LaunchShortcutExtension$LaunchCommandHandler@f970e8,
+	expression=,sourcePriority=0)
+
+!ENTRY org.eclipse.ui.workbench 2 0 2016-04-25 11:24:31.218
+!MESSAGE A handler conflict occurred.  This may disable some commands.
+!SUBENTRY 1 org.eclipse.ui.workbench 2 0 2016-04-25 11:24:31.218
+!MESSAGE Conflict for 'com.signaklara.skt.debug.ui.localLaunch.debug':
+HandlerActivation(commandId=com.signaklara.skt.debug.ui.localLaunch.debug,
+	handler=org.eclipse.debug.internal.ui.launchConfigurations.LaunchShortcutExtension$LaunchCommandHandler@1f0cbfb,
+	expression=,sourcePriority=0)
+HandlerActivation(commandId=com.signaklara.skt.debug.ui.localLaunch.debug,
+	handler=org.eclipse.debug.internal.ui.launchConfigurations.LaunchShortcutExtension$LaunchCommandHandler@1dfe453,
+	expression=,sourcePriority=0)

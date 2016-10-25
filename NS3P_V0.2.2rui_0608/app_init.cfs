@@ -1,0 +1,276 @@
+/*
+ * app_init.cfs
+ *  This file initializes the DSP core
+ *  Created on: Nov 12, 2015
+ *      Author: L_Rui
+ *  --------------------------------------------------------------------------
+ *  app_init.cfs
+ *  - DSP core initialization
+ *  --------------------------------------------------------------------------
+ *  Revision: 0.1
+ *  Modified date: Jan 20, 2016
+ */
+
+
+#include <sk4_sys.cfi>
+#include <sk4_syslib.cfi>
+#include "app.cfi"
+
+    Sys_Mem_Start_Segment(init_seg, SYS_MEMSPACE_P)
+
+// ----------------------------------------------------------------------------
+// Function:       Initialize
+// Description:    Main hardware initialization routine.
+// Clock cycles:   -
+// Modifies:       None
+// Assumptions:    None
+// ----------------------------------------------------------------------------
+.global Initialize
+Initialize:
+
+    // Push the link register onto the stack for function calls
+    Sys_Push_Reg_1(lr)
+
+    // For development purposes, disable restricted mode to make it easier
+    // to download a new application.
+    // REMOVE THIS LINE IN YOUR FINAL APPLICATION IF YOU REQUIRE RESTRICTED
+    // MODE
+    Sys_DebugPort_Set_AccessMode(DEBUG_PORT_ACCESS_MODE)
+
+    // Reset the HEAR
+    Sys_HEAR_Reset
+
+    // Disable the Filter Engine
+    Sys_FENG_Pause
+
+    // Reset the Filter Engine
+    Sys_FENG_Reset
+
+    // Disable the ARM Cortex-M3 processor
+    Sys_CM3_Pause
+
+    // Reset the ARM Cortex-M3 processor
+    Sys_CM3_Reset
+
+    // Set the system priorities, CFX > HEAR
+    Sys_Mem_Priority(SYSTEM_PRIORITY_VAL)
+    // Set the system priorities, CFX > ARM
+    Sys_Mem_Priority2(SYSTEM2_PRIORITY_VAL)
+
+    // Configure the status register
+    Sys_CFX_SRConfig(SR_VAL)
+
+    // Initialize the loop stack. This clears the stack of register triplets
+    // that describe the currently-executing loops. If data has been somehow
+    // left in the loop stack during a previous execution of the code,
+    // problems may arise when attempting to execute new loops.
+    // Refer to the documentation for more information regarding hardware loops
+    // and the loop stack.
+    Sys_CFX_InitLoopStack
+
+    // -----------------------------------------------------------------------
+    // Configure analog blocks
+    // -----------------------------------------------------------------------
+
+    // Disable the PLL and disable SDMCLK synchronization
+    Sys_Set_PLL_ModeControl(PLL_CTRL_0_VAL)
+    Sys_Set_PLL_ClockSync(CLK_SYNC_VAL)
+
+    // Configure the internal oscillator
+
+    // Set the internal oscillator base operating frequency, assuming that the
+    // calibration table is loaded
+    Sys_SetOperatingFrequency(SYSCLK_FREQ)
+
+    // Check that the operating frequency has been properly set. Clock will
+    // fail to adjust if calibration values are not available.
+    goto set_operating_frequency_ok if not_zero
+    // Configure the internal oscillator for an uncalibrated, nominal 2.56 MHz
+    // frequency
+    Sys_Set_OSC_CTRL_0(OSC_0_VAL_DEFAULT)
+
+set_operating_frequency_ok:
+
+    // Enable the internal oscillator and set the multiplier
+    Sys_Set_OSC_CTRL_1(OSC_1_VAL)
+
+    // Configure EXTCLK, HEARCLK and CM3CLK
+    Sys_Clk_Config0(CLOCKCONFIG0_VAL)
+
+    // Configure the SLOWCLK and UCLK
+    Sys_Clk_Config1(CLOCKCONFIG1_VAL)
+
+    // Calculate the proper value of SYS_CALC_SF based on the desired SLOWCLK
+    // and sampling frequencies
+    Sys_Calc_Sample_Freq_Val(SLOWCLK_FREQUENCY, SAMPLE_FREQUENCY)
+
+    // Configure the sampling frequency
+    Sys_Set_ADC_SAMPLE_FREQ_CFG(ADC_SAMPLE_FREQ_CFG | SYS_CALC_SF)
+
+    // Configure the decimation filter gain factors. In addition to the gain
+    // value defined in app.cfi, this macro uses the parameter SYS_CALC_SF
+    // which is calculated above by the macro Sys_Calc_Sample_Freq_Val(). The
+    // output is the define, SYS_CALC_GF, which is the rounded value for the
+    // desired gain factor and should be used for the ADC_GF field of
+    // A_ADC_DEC_CTRL_*.
+    Sys_Calc_Gain_Factor_Val(SYS_CALC_SF, DF_UNITY_GAIN)
+
+    // Disable LSAD
+    Sys_Set_LSAD_CTRL(LSAD_CTRL_DISABLE_VAL)
+
+    // Before configuring the FIFO controller, the IOC, ADCs and DACs are first
+    // disabled to ensure that no data is sent to the FIFO controller while the
+    // FIFO controller is being configured and that the ADCs/DACs are not
+    // in an undesired configuration when the IOC is configured.
+
+    // Disable the ADCs without calibrating them
+    Sys_Set_ADC_CTRL_NoCalibration(0, ADC_CTRL_0_DISABLE_VAL)
+    Sys_Set_ADC_CTRL_NoCalibration(1, ADC_CTRL_1_DISABLE_VAL)
+    Sys_Set_ADC_CTRL_NoCalibration(2, ADC_CTRL_2_DISABLE_VAL)
+    Sys_Set_ADC_CTRL_NoCalibration(3, ADC_CTRL_3_DISABLE_VAL)
+
+    // Disable IDRX0 and IDRX1
+    Sys_Set_IDRX_CFG(0, IDRX_DISABLE_VAL)
+    Sys_Set_IDRX_CFG(1, IDRX_DISABLE_VAL)
+
+    // Disable the output drivers
+    Sys_Set_OUTPUT_CTRL(OUTPUT_CTRL_DISABLE_VAL)
+
+    // Disable the DACs
+    Sys_Set_O_DAC_AO_CTRL(DAC_AO_CTRL_DISABLE_VAL)
+
+    // Disable the DMIC output interface
+    Sys_Set_DMIC_OUTPUT_CTRL(DMIC_OUTPUT_CTRL_DISABLE_VAL)
+
+    // Disable the IOC ADC input
+    Sys_IOC_ADCInputConfig(IOC_ADC_CFG_DISABLE_VAL)
+
+    // Disable the IOC PCM input
+    Sys_IOC_PCMInputConfig(IOC_PCM_CFG_DISABLE_VAL)
+
+    // Disable the IOC output
+    Sys_IOC_OutputConfig(IOC_OUTPUT_CFG_DISABLE_VAL)
+
+    // ---------------------------------------------------------------
+    // Configure the FIFOs and Input/Output Controller (IOC)
+    // ---------------------------------------------------------------
+    
+    // Configure FIFOs using the macro generated by the HCT (see the HCT-
+    // generated include file)
+    HCT_FIFO_Configure
+
+    // Configure source for CFX FIFO interrupt
+    Sys_FIFO_CFXIntConfig(CFX_FIFO_INT_NUM, CFX_FIFO_INT_SOURCE)
+
+//     Configure how the IOC handles input data from the ADCs
+//    Sys_IOC_ADCInputConfig(IOC_ADC_CFG_VAL)
+
+    Sys_IOC_ADCInputConfig(IOC_ADC_CFG_VAL1)
+
+    // Configure how the IOC handles input data from the PCM input
+    Sys_IOC_PCMInputConfig(IOC_PCM_CFG_VAL)
+
+    // Configure how the IOC interacts with the FIFOs
+    Sys_IOC_FIFOAccessConfig(IOC_FIFO_ACCESS_VALUE)
+    Sys_IOC_FIFOShiftConfig(IOC_FIFO_SHIFT_VALUE)
+
+//    // Auto-mute configuration for the output FIFOs
+//    Sys_FIFO_AutoMute(SYS_FIFO_B0_0, FIFO_B0_0_AUTO_MUTE_CFG_VAL)
+
+    // Configure how the IOC handles output data
+    Sys_IOC_OutputConfig(IOC_OUTPUT_CFG_VAL)
+
+    // Configure audio multiplexing
+    Sys_AudioMux_Config(AUDIO_MUX_CFG_VAL)
+
+
+    // ----------------------------------------------------
+    // Configure the analog input and output
+    // ----------------------------------------------------
+
+    // Configure ADC0 with calibration
+//    Sys_Set_ADC_CTRL(0, ADC0_CTRL_VAL)     // ADC control configuration; 
+//                                           // use LINEOUT_[DISABLE | ENABLE], 
+//                                           // LPF_IN_[BYPASS | ACTIVE_20KHZ], ADC_GAIN_*DB, PGAIN_[*DB | BYPASS], ADC_SEL_* and ADC_[DISABLE | ENABLE]
+    
+      Sys_Set_ADC_CTRL(1, ADC1_CTRL_VAL) 
+
+
+    // Configure the decimation filters
+    Sys_Set_ADC_DEC_CTRL(0, ADC_DEC_CTRL_0_VAL | SYS_CALC_GF)
+    Sys_Set_ADC_DEC_CTRL(1, ADC_DEC_CTRL_1_VAL | SYS_CALC_GF)
+    Sys_Set_ADC_DEC_CTRL(2, ADC_DEC_CTRL_2_VAL | SYS_CALC_GF)
+    Sys_Set_ADC_DEC_CTRL(3, ADC_DEC_CTRL_3_VAL | SYS_CALC_GF)
+
+    // Configure the analog output stage
+    Sys_Set_OUTPUT_CTRL(OUTPUT_CTRL_VAL)
+
+    // Configure the SDMCLK
+    Sys_Set_O_SDMCLK(O_SDMCLK_CTRL_VAL)
+
+    // Configure the source for VMIC
+    Sys_Set_VMIC_SW_CTRL(VMIC_CTRL_VAL)
+
+
+    // ----------------------------------------------------
+    // Configure the HEAR's function chain controller
+    // The values used in the following macro calls are defined by the HCT
+    // in the generated include file.
+    // ----------------------------------------------------
+
+    // Configure the function chain priorities
+    Sys_HEAR_FunctionChain_Priority(HCT_HEAR_FC_PRIORITY_VAL)
+
+    // Enable function chains
+    Sys_HEAR_FunctionChain_Enable(HCT_HEAR_FC_ENABLE_VAL)
+    // --------------------------------------------------------------------
+    // Configure the GPIO pins
+    // --------------------------------------------------------------------
+
+    // Configure the pins for PCM
+    // Configure the DIOs for PCM functionality
+    Sys_DIO_Config_C_PCM(DIO_PCM_CFG, PCM_MASTER, DIO_PCM_CLK, \
+                       DIO_PCM_FR, DIO_PCM_SERI, DIO_PCM_SERO)
+
+    // Configure the PCM clock
+    Sys_DIO_Config(DIO_PCM_CLK, DIO_CFG_UCLK)
+
+    // 03 23 2016 configure pin 8 as GPIO in
+    Sys_DIO_Config(DIO_GPIO_IN_PIN,DIO_GPIO_IN_CFG)
+    // 03 23 2016 configure pin 21 as GPIO out: report the GPIO input decoding error: 1, error; 0, no error
+    Sys_DIO_Config(DIO_GPIO_OUT_IND,DIO_GPIO_OUT_CFG) 
+    // 03 23 2016 configure pin 16 as GPIO out: Sync clock (Check if the sampling time stamps are correct)
+    Sys_DIO_Config(DIO_GPIO_OUT_SYNC,DIO_GPIO_OUT_CFG)
+
+    //
+    // Configure the CFX's interrupt controller
+    //
+
+    // Clear any pending interrupts
+    Sys_Int_Ack(INT_STATUS_VAL)
+
+    // Configure the interrupt priorities
+    Sys_Int_Priority(INT_PRIORITY_VAL)
+
+    // Configure interrupt multiplexing
+    Sys_Int_MuxConfig(INT_MUX_VAL)
+
+    // Enable interrupts
+    Sys_Int_Enable(INT_ENABLE_VAL)
+
+    // Refresh the watchdog
+    Sys_Watchdog_Refresh
+
+    // Enable interrupts on the CFX
+    Sys_CFX_IntEnable
+
+    Sys_HEAR_Start
+    // Start the ARM Cortex-M3 processor
+    Sys_CM3_Start
+
+    // Pop the link register from the stack
+    Sys_Pop_Reg_1(lr)
+
+    return
+
+

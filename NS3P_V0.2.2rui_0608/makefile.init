@@ -1,0 +1,2 @@
+# Ensure Windows Shell is used
+SHELL=cmd.exe

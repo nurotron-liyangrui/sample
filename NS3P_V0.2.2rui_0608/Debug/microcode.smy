@@ -1,0 +1,128 @@
+HEAR Configuration Tool, ON Semiconductor
+Generated from ../microcode.hct
+Libraries:
+    C:\PROGRA~2\ONSEMI~1\EZAIRO~1/lib/cfx\stdhear2.hcl[2.0.3]
+
+********************************************************
+
+User Defined Constants
+========================================================
+
+Name                       Expression                                Hex Value
+------------------------------------------------------------------------------
+WOLA_La                    256                                       0x100
+WOLA_Ls                    256                                       0x100
+WOLA_N                     256                                       0x100
+WOLA_R                     128                                       0x80
+WOLA_STACKING              WOLA_STACKING_EVEN                        0x0
+WOLA_ANALYSIS_MODE         WOLA_MODE_MONO                            0x0
+WOLA_SAMPLE_SIZE           WOLA_SAMPLE_18BITS                        0x0
+WOLA_RESULTS_OFFSET        0x0                                       0x0
+GAIN_VECTOR_OFFSET         0x0                                       0x0
+WOLA_TEMP01_OFFSET         WOLA_RESULTS_OFFSET                       0x0
+WOLA_TEMP23_OFFSET         0x0                                       0x0
+X_WOLA_TEMP01_BASE         D_HEAR_H01MEM_BASE + WOLA_TEMP01_OFFSET   0x4000
+X_WOLA_TEMP23_BASE         D_HEAR_H23MEM_BASE + WOLA_TEMP23_OFFSET   0x4400
+X_ANALYSIS_RESULTS_BASE    D_HEAR_H01MEM_BASE + WOLA_RESULTS_OFFSET  0x4000
+X_GAIN_TABLE_BASE          D_HEAR_H45MEM_BASE + GAIN_VECTOR_OFFSET   0x4800
+X_ANALYSIS_RESULTS_ENERGY  D_HEAR_H45MEM_BASE + 0x40                 0x4840
+FIFO_A0_0_BASE             0x0                                       0x0
+FIFO_A0_0_SIZE             WOLA_La + WOLA_R                          0x180
+FIFO_A0_0_BASE_PTR         0                                         0x0
+FIFO_A0_0_IOC_PTR          0                                         0x0
+X_ANALYSIS_FIFO_ADDR       D_HEAR_A0MEM_BASE + FIFO_A0_0_BASE        0xC000
+
+
+
+FIFO Configuration
+========================================================
+
+FIFO_A0_0:
+---------
+        Start:            0
+        Size:             384
+        Block Size:       128
+        Base Pointer:     0
+        IO Block Pointer: 0
+
+
+
+Microcode Module Configuration 
+========================================================
+
+Energy: WOLA_A_Energy
+---------------------
+        N: 256
+        stacking: 0
+        channel_mode: 0
+        input_addr: 0x4000
+        output_addr: 0x4840
+
+Gain_R: GAIN_A
+--------------
+        N: 256
+        stacking: 0
+        channel_mode: 0
+        input_addr: 0x4000
+        gain_vector_addr: 0x4800
+        output_addr: 0x4000
+
+
+
+Function Chain Configuration 
+========================================================
+
+CMD0: function_chain0
+---------------------
+        WOLA_Analysis(WOLA_A_Analysis, 256, 256, 256, 128, 0, 0, 0, 0xC000, 0x4000, 0x4000, 0x4400, 0)
+        Energy(WOLA_A_Energy, 256, 0, 0, 0x4000, 0x4840)
+        Event(0)
+
+CMD1: function_chain1
+---------------------
+        Gain_R(GAIN_A, 256, 0, 0, 0x4000, 0x4800, 0x4000)
+        Event(1)
+
+
+
+Microcode Memory Usage
+========================================================
+
+Function Chain Microcode Size
+-----------------------------
+        function_chain0: 121
+        function_chain1: 14
+
+Summary
+-------
+        Microcode Memory Size    = 139
+        Configuration Data Start = 0xBF62
+        Configuration Data Size  = 62
+
+Microcode Cycle Estimates 
+========================================================
+
+function_chain0 Cycle Estimate
+-------------------------------
+Total Minimum Cycle Count = 1480
+Total Maximum Cycle Count = 1480
+
+WOLA_Analysis(WOLA_A_Analysis) Cycle Count
+    Minimum = 1208
+    Maximum = 1208
+
+Energy(WOLA_A_Energy) Cycle Count
+    Minimum = 268
+    Maximum = 268
+
+
+function_chain1 Cycle Estimate
+-------------------------------
+Total Minimum Cycle Count = 270
+Total Maximum Cycle Count = 270
+
+Gain_R(GAIN_A) Cycle Count
+    Minimum = 266
+    Maximum = 266
+
+
