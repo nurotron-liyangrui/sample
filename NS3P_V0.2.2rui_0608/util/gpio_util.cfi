@@ -1,0 +1,41 @@
+//------------------------------------------------------------------------------------//
+// gpio_util.cfi
+//------------------------------------------------------------------------------------//
+
+#ifndef UTIL_GPIO_CFI_INCLUDED
+#define UTIL_GPIO_CFI_INCLUDED
+
+#define DIO_LED_GPIO            6                       // GPIO 6: LED
+
+#define DIO_LED_CFG             (DIO_HIGH_DRIVE             | \
+                                 DIO_LPF_DISABLE            | \
+                                 DIO_WEAK_PU_ENABLE         | \
+                                 DIO_STRONG_PU_DISABLE      | \
+                                 DIO_MODE_GPIO_OUT_0)
+
+// Set GPIO state
+#define OFF                     0            // read
+#define ON                      1
+//-----------------------------------------------------------------------------
+// Macro         : SET_EARHOOK_LED
+//-----------------------------------------------------------------------------
+// Description   : Turn on/off the LED
+// Inputs        : 
+// Outputs       : 
+// Register mods : 
+// Assumptions   : 
+// Clock Cycles  :
+// Author        : Liyang Rui
+// Date          : Oct 5 2016
+//-----------------------------------------------------------------------------
+#macro SET_EARHOOK_LED(state)
+
+   #if state == OFF
+     Sys_GPIO_Set_Low(DIO_LED_GPIO);
+   #else
+    Sys_GPIO_Set_High(DIO_LED_GPIO);
+   #endif 
+#endm
+
+
+#endif // UTIL_GPIO_CFI_INCLUDED
